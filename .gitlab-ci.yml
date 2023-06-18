@@ -1,0 +1,25 @@
+image: docker:24.0.2
+
+stages:
+    - build
+    - check
+    - drop
+
+build:
+    stage: build
+    script:
+        - docker build -t nginx-image .
+        - docker ps --filter name=nginx-container --quiet | xargs --no-run-if-empty docker stop | xargs --no-run-if-empty docker rm
+        - docker run -d --restart=always --name nginx-container -p 9889:80 nginx-image
+
+check:
+    stage: check
+    script:
+        - sh ./status_check.sh
+        - sh ./check_md5.sh
+     
+drop:
+    stage: drop
+    script:
+        - docker stop nginx-container
+        - docker rm nginx-container
